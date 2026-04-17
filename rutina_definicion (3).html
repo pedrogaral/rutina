@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Rutina</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d0d; --surface: #161616; --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.07); --accent: #c8f135;
+    --day2: #35c8f1; --day3: #f1a035; --text: #f0f0f0; --muted: #888;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; padding-bottom: 4rem; -webkit-text-size-adjust: 100%; }
+  header { padding: 2.5rem 1.5rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; gap: 1.5rem; max-width: 900px; margin: 0 auto; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 5rem); line-height: 0.9; letter-spacing: 0.02em; color: var(--accent); }
+  .logo span { color: var(--text); }
+  .header-meta p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .header-meta strong { color: var(--text); font-weight: 500; }
+
+  .tabs { max-width: 900px; margin: 0 auto; padding: 1.2rem 1.5rem 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  .tab {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.05em;
+    padding: 10px 18px; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); cursor: pointer;
+    -webkit-tap-highlight-color: transparent; transition: all 0.2s;
+  }
+  .tab.active[data-day="1"] { background: var(--accent); color: #000; border-color: var(--accent); }
+  .tab.active[data-day="2"] { background: var(--day2); color: #000; border-color: var(--day2); }
+  .tab.active[data-day="3"] { background: var(--day3); color: #000; border-color: var(--day3); }
+
+  .day-panel { display: none; max-width: 900px; margin: 0 auto; padding: 1.2rem 1.5rem; }
+  .day-panel.active { display: block; }
+  .day-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+  .day-meta { font-size: 12px; color: var(--muted); margin-bottom: 1.2rem; display: flex; gap: 8px; flex-wrap: wrap; }
+  .day-meta span { background: var(--surface2); padding: 3px 10px; border-radius: 3px; border: 1px solid var(--border); }
+
+  .exercises { display: flex; flex-direction: column; gap: 10px; }
+  .exercise-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .exercise-card[data-type="compound"] { border-left: 3px solid var(--accent); }
+  .exercise-card[data-type="isolation"] { border-left: 3px solid var(--day2); }
+  .exercise-card[data-type="cardio"] { border-left: 3px solid var(--day3); }
+
+  .exercise-main {
+    display: flex; align-items: center; padding: 14px 14px; gap: 10px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .exercise-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--muted); min-width: 26px; }
+  .exercise-info { flex: 1; min-width: 0; }
+  .exercise-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .exercise-stats { display: flex; gap: 10px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+  .exercise-stats b { color: var(--text); font-weight: 500; }
+
+  .badge { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+  .badge-compound { background: rgba(200,241,53,0.12); color: var(--accent); border: 1px solid rgba(200,241,53,0.2); }
+  .badge-isolation { background: rgba(53,200,241,0.12); color: var(--day2); border: 1px solid rgba(53,200,241,0.2); }
+  .badge-cardio { background: rgba(241,160,53,0.12); color: var(--day3); border: 1px solid rgba(241,160,53,0.2); }
+
+  .expand-icon { font-size: 22px; color: var(--muted); min-width: 22px; text-align: center; line-height: 1; transition: transform 0.25s; flex-shrink: 0; }
+  .exercise-card.open .expand-icon { transform: rotate(45deg); }
+
+  .exercise-detail { display: none; border-top: 1px solid var(--border); padding: 14px 14px 16px 14px; }
+  .exercise-card.open .exercise-detail { display: block; }
+  .detail-desc { font-size: 13px; color: var(--muted); line-height: 1.75; margin-bottom: 14px; }
+
+  .video-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #ff0000; color: #fff; text-decoration: none;
+    font-size: 13px; font-weight: 500; padding: 10px 18px;
+    border-radius: 4px; -webkit-tap-highlight-color: transparent;
+  }
+  .video-btn svg { width: 14px; height: 14px; fill: white; flex-shrink: 0; }
+
+  .note-box { margin-top: 1.2rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .note-box strong { color: var(--text); font-weight: 500; }
+  .tip-label { font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 4px; }
+
+  @media (max-width: 480px) {
+    header { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+    .badge { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MI<br><span>RUTINA</span></div>
+  <div class="header-meta">
+    <p><strong>3 días / semana</strong> — Fuerza + Cardio</p>
+    <p>Objetivo: <strong>Definición</strong></p>
+    <p>Toca cada ejercicio para ver descripción y vídeo</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-day="1">DÍA 1 — Empuje</button>
+  <button class="tab" data-day="2">DÍA 2 — Tirón</button>
+  <button class="tab" data-day="3">DÍA 3 — Piernas</button>
+</div>
+
+<!-- DÍA 1 -->
+<div class="day-panel active" id="day1">
+  <div class="day-title" style="color:var(--accent)">Empuje</div>
+  <div class="day-meta">
+    <span>~70 min fuerza</span><span>20 min HIIT</span><span>Pecho · Hombro · Tríceps</span>
+  </div>
+  <div class="exercises">
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">01</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Press banca con barra</div>
+          <div class="exercise-stats"><span>4 series</span><span><b>6–8</b> reps</span><span>Descanso <b>2–3 min</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Tumbado en el banco, agarre algo más ancho que los hombros. Baja la barra hasta rozar el pecho, empuja explosivo hacia arriba. Escápulas juntas y pies apoyados en el suelo durante todo el movimiento.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=press+banca+barra+tecnica+correcta+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">02</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Press inclinado con mancuernas</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>8–10</b> reps</span><span>Descanso <b>90 s</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Banco inclinado a 30–45°. Mancuernas a la altura del pecho, codos a 45° del cuerpo. Empuja hacia arriba y ligeramente hacia dentro. Trabaja la parte alta del pecho.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=press+inclinado+mancuernas+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">03</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Press militar con barra</div>
+          <div class="exercise-stats"><span>4 series</span><span><b>6–8</b> reps</span><span>Descanso <b>2 min</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">De pie o sentado, barra a la altura del pecho. Empuja por encima de la cabeza hasta extensión completa. Core apretado para no arquear la espalda. Trabaja hombros, trapecios y tríceps.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=press+militar+barra+tecnica+correcta+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">04</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Fondos en paralelas</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>8–12</b> reps</span><span>Descanso <b>90 s</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">En las paralelas, baja controlado hasta que los codos lleguen a 90°. Cuerpo ligeramente inclinado hacia adelante para activar más el pecho. Añade lastre cuando hagas más de 12 reps con facilidad.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=fondos+paralelas+triceps+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="isolation">
+      <div class="exercise-main">
+        <div class="exercise-num">05</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Extensión tríceps en polea</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>12–15</b> reps</span><span>Descanso <b>60 s</b></span></div>
+        </div>
+        <span class="badge badge-isolation">Aislamiento</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Polea alta con cuerda o barra. Codos pegados al cuerpo, empuja hacia abajo hasta extensión completa. No dejes que los codos se abran. El movimiento parte solo del codo, sin mover los hombros.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=extension+triceps+polea+cuerda+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="cardio">
+      <div class="exercise-main">
+        <div class="exercise-num">06</div>
+        <div class="exercise-info">
+          <div class="exercise-name">HIIT — 30" sprint / 60" caminata</div>
+          <div class="exercise-stats"><span>10 rondas</span><span><b>20 min</b> total</span></div>
+        </div>
+        <span class="badge badge-cardio">Cardio</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">30 segundos al 85–90% de tu velocidad máxima, seguidos de 60 segundos a 5–6 km/h para recuperar. Repite 10 veces. El gasto post-entreno dura horas — muy superior a la cinta constante.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=HIIT+cinta+correr+intervalos+sprint+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+  </div>
+  <div class="note-box">
+    <div class="tip-label">Consejo del día</div>
+    <strong>Empieza siempre por los compuestos</strong> cuando tienes más energía. Los ejercicios de aislamiento y el HIIT van al final.
+  </div>
+</div>
+
+<!-- DÍA 2 -->
+<div class="day-panel" id="day2">
+  <div class="day-title" style="color:var(--day2)">Tirón</div>
+  <div class="day-meta">
+    <span>~70 min fuerza</span><span>20 min HIIT</span><span>Espalda · Bíceps</span>
+  </div>
+  <div class="exercises">
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">01</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Peso muerto rumano</div>
+          <div class="exercise-stats"><span>4 series</span><span><b>6–8</b> reps</span><span>Descanso <b>2–3 min</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">De pie con la barra. Rodillas ligeramente flexionadas, espalda recta. Baja deslizándola por las piernas hasta sentir el estiramiento en isquiotibiales. Vuelve arriba apretando glúteos. No toques el suelo.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=peso+muerto+rumano+tecnica+correcta+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">02</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Jalón al pecho con barra</div>
+          <div class="exercise-stats"><span>4 series</span><span><b>8–10</b> reps</span><span>Descanso <b>2 min</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Sustituto directo de las dominadas. Agarre prono ancho en la barra. Tira hacia el pecho apretando la espalda, no el bíceps. Cuerpo ligeramente inclinado atrás. Baja controlado hasta casi extensión completa. Mismo músculo, peso graduable.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=jalon+al+pecho+barra+agarre+ancho+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">03</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Remo con barra</div>
+          <div class="exercise-stats"><span>4 series</span><span><b>6–8</b> reps</span><span>Descanso <b>2 min</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Inclinado hacia adelante a unos 45°, espalda neutra. Tira de la barra hacia el abdomen bajo apretando la espalda. Codos cerca del cuerpo. La barra sube hacia la cadera, no hacia el pecho.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=remo+barra+inclinado+tecnica+correcta+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="isolation">
+      <div class="exercise-main">
+        <div class="exercise-num">04</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Curl con barra recta</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>8–10</b> reps</span><span>Descanso <b>90 s</b></span></div>
+        </div>
+        <span class="badge badge-isolation">Aislamiento</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">De pie, codos pegados al cuerpo. Sube la barra con supinación, aprieta el bíceps arriba, baja controlado en 2–3 segundos. No balancees el cuerpo — si lo haces, el peso es excesivo.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=curl+biceps+barra+recta+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="isolation">
+      <div class="exercise-main">
+        <div class="exercise-num">05</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Curl martillo con mancuernas</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>10–12</b> reps</span><span>Descanso <b>60 s</b></span></div>
+        </div>
+        <span class="badge badge-isolation">Aislamiento</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Agarre neutro (pulgar arriba, como un martillo). Sube alternando brazos. Trabaja el braquial y braquiorradial además del bíceps — da más grosor al brazo que el curl normal.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=curl+martillo+mancuernas+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="cardio">
+      <div class="exercise-main">
+        <div class="exercise-num">06</div>
+        <div class="exercise-info">
+          <div class="exercise-name">HIIT — 30" sprint / 60" caminata</div>
+          <div class="exercise-stats"><span>10 rondas</span><span><b>20 min</b> total</span></div>
+        </div>
+        <span class="badge badge-cardio">Cardio</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Mismo protocolo que el día 1. 30 segundos al 85–90% de velocidad máxima, 60 segundos de caminata recuperadora. El HIIT después de espalda y bíceps es especialmente efectivo.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=HIIT+cinta+correr+intervalos+sprint+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+  </div>
+  <div class="note-box">
+    <div class="tip-label">Consejo del día</div>
+    <strong>El jalón al pecho</strong> es el sustituto perfecto de las dominadas. Cuando vayas bajando de peso puedes ir pasando a dominadas asistidas.
+  </div>
+</div>
+
+<!-- DÍA 3 -->
+<div class="day-panel" id="day3">
+  <div class="day-title" style="color:var(--day3)">Piernas</div>
+  <div class="day-meta">
+    <span>~70 min fuerza</span><span>30 min caminata inclinada</span><span>Cuádriceps · Isquios · Glúteos</span>
+  </div>
+  <div class="exercises">
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">01</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Sentadilla con barra</div>
+          <div class="exercise-stats"><span>4 series</span><span><b>6–8</b> reps</span><span>Descanso <b>2–3 min</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Barra en la espalda, pies a anchura de hombros. Baja hasta que los muslos queden paralelos al suelo. Rodillas siguen la dirección de los pies. Sube apretando glúteos. El ejercicio más completo que existe.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=sentadilla+barra+tecnica+correcta+español+principiantes" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">02</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Prensa de piernas</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>10–12</b> reps</span><span>Descanso <b>90 s</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Pies a anchura de hombros en la plataforma. Baja el peso controlado hasta 90° sin despegar las lumbares del respaldo. Empuja con los talones para activar más glúteos e isquios.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=prensa+piernas+tecnica+correcta+posicion+pies+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="compound">
+      <div class="exercise-main">
+        <div class="exercise-num">03</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Zancadas con mancuernas</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>10–12</b> reps/pierna</span><span>Descanso <b>90 s</b></span></div>
+        </div>
+        <span class="badge badge-compound">Compuesto</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Paso largo hacia adelante, baja la rodilla trasera casi hasta el suelo. Rodilla delantera no pasa la punta del pie. Alterna piernas. Corrige desequilibrios entre piernas que la prensa no detecta.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=zancadas+mancuernas+tecnica+correcta+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="isolation">
+      <div class="exercise-main">
+        <div class="exercise-num">04</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Curl femoral tumbado</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>10–12</b> reps</span><span>Descanso <b>60 s</b></span></div>
+        </div>
+        <span class="badge badge-isolation">Aislamiento</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Tumbado boca abajo en la máquina. Sube hasta que los talones toquen los glúteos, baja controlado. No levantes las caderas del banco. La bajada lenta (2–3 segundos) es donde se construye el músculo.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=curl+femoral+tumbado+maquina+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="isolation">
+      <div class="exercise-main">
+        <div class="exercise-num">05</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Extensión de cuádriceps</div>
+          <div class="exercise-stats"><span>3 series</span><span><b>12–15</b> reps</span><span>Descanso <b>60 s</b></span></div>
+        </div>
+        <span class="badge badge-isolation">Aislamiento</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Sentado en la máquina, sube hasta extensión completa apretando el cuádriceps, baja lento. Sin impulso. Finisher perfecto después de sentadilla y prensa.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=extension+cuadriceps+maquina+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="isolation">
+      <div class="exercise-main">
+        <div class="exercise-num">06</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Gemelos de pie con peso</div>
+          <div class="exercise-stats"><span>4 series</span><span><b>12–15</b> reps</span><span>Descanso <b>60 s</b></span></div>
+        </div>
+        <span class="badge badge-isolation">Aislamiento</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">Sube de puntillas al máximo, aguanta 1 segundo arriba, baja hasta el estiramiento completo. Usa un escalón para mayor recorrido. Los gemelos responden bien a repeticiones más altas.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=gemelos+pantorrillas+maquina+de+pie+tecnica+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+    <div class="exercise-card" data-type="cardio">
+      <div class="exercise-main">
+        <div class="exercise-num">07</div>
+        <div class="exercise-info">
+          <div class="exercise-name">Cinta inclinada 12–15%</div>
+          <div class="exercise-stats"><span>30 min</span><span>Velocidad <b>5,5–6,5 km/h</b></span></div>
+        </div>
+        <span class="badge badge-cardio">Cardio</span>
+        <div class="expand-icon">+</div>
+      </div>
+      <div class="exercise-detail">
+        <p class="detail-desc">No corras — camina rápido con inclinación máxima que puedas mantener 30 minutos. Destruye calorías sin impacto articular, activa glúteos e isquios, y el cuerpo no la tiene catalogada como la cinta plana.</p>
+        <a class="video-btn" href="https://www.youtube.com/results?search_query=caminata+inclinada+cinta+12+3+30+beneficios+español" target="_blank"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>Ver en YouTube</a>
+      </div>
+    </div>
+
+  </div>
+  <div class="note-box">
+    <div class="tip-label">Consejo del día</div>
+    <strong>La sentadilla con barra es el ejercicio más importante de toda la semana.</strong> Empieza con poco peso, aprende la técnica, y sube progresivamente cada semana.
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var day = this.getAttribute('data-day');
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.day-panel').forEach(function(p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById('day' + day).classList.add('active');
+    });
+  });
+
+  // Exercise cards
+  document.querySelectorAll('.exercise-main').forEach(function(main) {
+    main.addEventListener('click', function() {
+      var card = this.closest('.exercise-card');
+      var wasOpen = card.classList.contains('open');
+      document.querySelectorAll('.exercise-card.open').forEach(function(c) { c.classList.remove('open'); });
+      if (!wasOpen) { card.classList.add('open'); }
+    });
+  });
+
+});
+</script>
+</body>
+</html>
